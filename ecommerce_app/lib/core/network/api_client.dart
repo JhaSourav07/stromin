@@ -32,7 +32,7 @@ class ApiClient {
       onError: (DioException e, handler) {
         // Global error handling (e.g., if token expires and returns 401)
         if (e.response?.statusCode == 401) {
-          // In a real app, you might trigger a logout function here via GetX
+          // TODO: Logot the user, clear token, and navigate to login screen
           print("Unauthorized. Token might be expired.");
         }
         return handler.next(e);
