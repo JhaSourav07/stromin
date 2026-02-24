@@ -24,9 +24,11 @@ if (process.env.NODE_ENV === 'development' || true) {
 
 // Route files
 const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 // Mount routers
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // Base route for testing
 app.get('/', (req, res) => {
