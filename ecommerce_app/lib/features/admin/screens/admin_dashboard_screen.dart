@@ -1,5 +1,5 @@
 // lib/features/admin/screens/admin_dashboard_screen.dart
-import 'package:ecommerce_app/features/auth/controllers/admin_product_controller.dart';
+import 'package:ecommerce_app/features/admin/controllers/admin_product_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';

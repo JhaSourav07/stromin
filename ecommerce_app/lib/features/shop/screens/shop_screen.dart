@@ -26,11 +26,7 @@ class ShopScreen extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  // We will build the CartScreen next!
-                  // Get.toNamed('/cart'); 
-                  Get.snackbar('Cart', 'Cart screen coming next!');
-                },
+                onPressed: () => Get.toNamed('/cart'),
               ),
               Positioned(
                 right: 8,

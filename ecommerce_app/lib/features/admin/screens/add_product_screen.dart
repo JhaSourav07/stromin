@@ -1,6 +1,6 @@
 // lib/features/admin/screens/add_product_screen.dart
 import 'dart:io';
-import 'package:ecommerce_app/features/auth/controllers/admin_product_controller.dart';
+import 'package:ecommerce_app/features/admin/controllers/admin_product_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
