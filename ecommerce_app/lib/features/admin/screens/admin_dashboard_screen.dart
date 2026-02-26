@@ -19,6 +19,10 @@ class AdminDashboardScreen extends StatelessWidget {
         title: const Text('Admin Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.local_shipping), // NEW BUTTON
+            onPressed: () => Get.toNamed('/admin-orders'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authController.logout(),
           ),
