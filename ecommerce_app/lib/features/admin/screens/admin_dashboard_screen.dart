@@ -8,7 +8,9 @@ class AdminDashboardScreen extends StatelessWidget {
   AdminDashboardScreen({Key? key}) : super(key: key);
 
   final AuthController authController = Get.find<AuthController>();
-  final AdminProductController productController = Get.put(AdminProductController());
+  final AdminProductController productController = Get.put(
+    AdminProductController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +21,12 @@ class AdminDashboardScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authController.logout(),
-          )
+          ),
         ],
       ),
       body: Obx(() {
-        if (productController.isLoading.value && productController.products.isEmpty) {
+        if (productController.isLoading.value &&
+            productController.products.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -38,12 +41,31 @@ class AdminDashboardScreen extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: NetworkImage(product.imageUrl),
-                  backgroundColor: Colors.transparent,
+                leading: SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // If the image fails to load, show a fallback icon instead of crashing!
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
                 title: Text(product.name),
-                subtitle: Text('\$${product.price.toStringAsFixed(2)} - Stock: ${product.stock}'),
+                subtitle: Text(
+                  '\$${product.price.toStringAsFixed(2)} - Stock: ${product.stock}',
+                ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () => productController.deleteProduct(product.id),
