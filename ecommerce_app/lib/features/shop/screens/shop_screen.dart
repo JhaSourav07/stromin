@@ -10,9 +10,12 @@ class ShopScreen extends StatelessWidget {
 
   final AuthController authController = Get.find<AuthController>();
   final ShopController shopController = Get.put(ShopController());
-  
+
   // Inject the CartController so it's globally available
-  final CartController cartController = Get.put(CartController(), permanent: true);
+  final CartController cartController = Get.put(
+    CartController(),
+    permanent: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +23,7 @@ class ShopScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Store'),
         actions: [
+          
           // Shopping Cart Icon with Badge
           Stack(
             alignment: Alignment.center,
@@ -28,17 +32,26 @@ class ShopScreen extends StatelessWidget {
                 icon: const Icon(Icons.shopping_cart),
                 onPressed: () => Get.toNamed('/cart'),
               ),
+              
               Positioned(
                 right: 8,
                 top: 8,
                 child: Obx(() {
-                  if (cartController.itemCount == 0) return const SizedBox.shrink();
+                  if (cartController.itemCount == 0)
+                    return const SizedBox.shrink();
                   return Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
                     child: Text(
                       cartController.itemCount.toString(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   );
                 }),
@@ -46,9 +59,13 @@ class ShopScreen extends StatelessWidget {
             ],
           ),
           IconButton(
+                icon: const Icon(Icons.receipt_long),
+                onPressed: () => Get.toNamed('/my-orders'),
+              ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authController.logout(),
-          )
+          ),
         ],
       ),
       body: Obx(() {
@@ -74,18 +91,26 @@ class ShopScreen extends StatelessWidget {
             final product = shopController.products[index];
             return Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Image
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(10),
+                      ),
                       child: Image.network(
                         product.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.image_not_supported,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -95,9 +120,20 @@ class ShopScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
-                        Text('\$${product.price.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+                        Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
@@ -105,11 +141,11 @@ class ShopScreen extends StatelessWidget {
                             onPressed: () => cartController.addToCart(product),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 0),
-                              textStyle: const TextStyle(fontSize: 12)
+                              textStyle: const TextStyle(fontSize: 12),
                             ),
                             child: const Text('Add to Cart'),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
