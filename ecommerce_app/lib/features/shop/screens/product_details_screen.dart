@@ -1,25 +1,31 @@
 // lib/features/shop/screens/product_details_screen.dart
-import 'package:ecommerce_app/features/auth/models/product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../admin/models/product_model.dart';
 import '../../cart/controllers/cart_controller.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
   ProductDetailsScreen({Key? key}) : super(key: key);
 
   final CartController cartController = Get.find<CartController>();
-  
-  // We receive the product object passed from the ShopScreen
   final ProductModel product = Get.arguments;
+
+  // Tracks the current index for the pagination dots
+  final RxInt _currentImageIndex = 0.obs;
 
   @override
   Widget build(BuildContext context) {
+    // Failsafe in case a product has no images array but has a single imageUrl
+    final List<String> displayImages = product.images.isNotEmpty
+        ? product.images
+        : [product.imageUrl];
+
     return Scaffold(
       backgroundColor: const Color(0xFF09090B),
       body: Stack(
         children: [
-          // 1. The Hero Image Background
+          // 1. The Hero Image Background with Swipable Carousel
           Positioned(
             top: 0,
             left: 0,
@@ -27,39 +33,78 @@ class ProductDetailsScreen extends StatelessWidget {
             height: MediaQuery.of(context).size.height * 0.55,
             child: Hero(
               tag: 'product_image_${product.id}',
-              child: Image.network(
-                product.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFF18181B),
-                  child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
-                ),
-              ),
-            ),
-          ),
-          
-          // 2. A subtle gradient overlay so the white text pops against any image
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.of(context).size.height * 0.55,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.4),
-                    Colors.transparent,
-                    const Color(0xFF09090B).withOpacity(0.8),
-                  ],
-                ),
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    itemCount: displayImages.length,
+                    physics: const BouncingScrollPhysics(),
+                    onPageChanged: (index) => _currentImageIndex.value = index,
+                    itemBuilder: (context, index) {
+                      return Image.network(
+                        displayImages[index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFF18181B),
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                            size: 50,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // A subtle gradient overlay so the white text/dots pop against any image
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.4),
+                            Colors.transparent,
+                            const Color(0xFF09090B).withOpacity(0.9),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Pagination Dots Indicator (Only show if > 1 image)
+                  if (displayImages.length > 1)
+                    Positioned(
+                      bottom: 40,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(displayImages.length, (index) {
+                          return Obx(() {
+                            bool isActive = _currentImageIndex.value == index;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: isActive ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          });
+                        }),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
 
-          // 3. The Details Bottom Sheet
+          // 2. The Details Bottom Sheet
           Positioned(
             top: MediaQuery.of(context).size.height * 0.45,
             left: 0,
@@ -76,19 +121,27 @@ class ProductDetailsScreen extends StatelessWidget {
                 children: [
                   // Category Tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF27272A),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       product.category.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ).animate().fade(delay: 200.ms).slideY(begin: 0.2),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Title & Price Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -97,23 +150,36 @@ class ProductDetailsScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           product.name,
-                          style: const TextStyle(color: Colors.white, fontSize: 28, height: 1.2, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            height: 1.2,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Text(
                         '\$${product.price.toStringAsFixed(0)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w300),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w300,
+                        ),
                       ),
                     ],
                   ).animate().fade(delay: 300.ms).slideY(begin: 0.2),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Description
                   const Text(
                     'Description',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ).animate().fade(delay: 400.ms),
                   const SizedBox(height: 8),
                   Expanded(
@@ -121,7 +187,11 @@ class ProductDetailsScreen extends StatelessWidget {
                       physics: const BouncingScrollPhysics(),
                       child: Text(
                         product.description,
-                        style: const TextStyle(color: Colors.grey, fontSize: 14, height: 1.6),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
                       ),
                     ),
                   ).animate().fade(delay: 500.ms).slideY(begin: 0.1),
@@ -129,8 +199,8 @@ class ProductDetailsScreen extends StatelessWidget {
               ),
             ),
           ),
-          
-          // 4. Floating Back Button
+
+          // 3. Floating Back Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 16,
@@ -141,39 +211,58 @@ class ProductDetailsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
-          
-          // 5. Floating "Add to Cart" Bar
+
+          // 4. Floating "Add to Cart" Bar
           Positioned(
             bottom: 30,
             left: 24,
             right: 24,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 10,
-                shadowColor: Colors.black.withOpacity(0.5),
-              ),
-              onPressed: () {
-                cartController.addToCart(product);
-              },
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_bag_outlined, size: 22),
-                  SizedBox(width: 10),
-                  Text('Add to Cart', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ).animate().fade(delay: 600.ms).slideY(begin: 0.5, curve: Curves.easeOutBack),
+            child:
+                ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 10,
+                        shadowColor: Colors.black.withOpacity(0.5),
+                      ),
+                      onPressed: () {
+                        cartController.addToCart(product);
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, size: 22),
+                          SizedBox(width: 10),
+                          Text(
+                            'Add to Cart',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .animate()
+                    .fade(delay: 600.ms)
+                    .slideY(begin: 0.5, curve: Curves.easeOutBack),
           ),
         ],
       ),

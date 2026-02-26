@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:ecommerce_app/core/network/api_client.dart';
-import 'package:ecommerce_app/features/auth/models/product_model.dart';
+import 'package:ecommerce_app/features/admin/models/product_model.dart';
 import 'package:get/get.dart';
 
 class ShopController extends GetxController{

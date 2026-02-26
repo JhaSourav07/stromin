@@ -1,7 +1,7 @@
 // lib/features/cart/controllers/cart_controller.dart
 import 'package:dio/dio.dart';
 import 'package:ecommerce_app/core/network/api_client.dart';
-import 'package:ecommerce_app/features/auth/models/product_model.dart';
+import 'package:ecommerce_app/features/admin/models/product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/cart_item_model.dart';

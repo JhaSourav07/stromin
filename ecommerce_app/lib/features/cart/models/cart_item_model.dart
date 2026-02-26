@@ -1,4 +1,4 @@
-import 'package:ecommerce_app/features/auth/models/product_model.dart';
+import 'package:ecommerce_app/features/admin/models/product_model.dart';
 
 class CartItemModel {
   final ProductModel product;

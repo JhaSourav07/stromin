@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:ecommerce_app/core/network/api_client.dart';
-import 'package:ecommerce_app/features/auth/models/product_model.dart';
+import 'package:ecommerce_app/features/admin/models/product_model.dart';
 import 'package:get/get.dart';
 
 class AdminProductController extends GetxController {
@@ -11,7 +11,7 @@ class AdminProductController extends GetxController {
 
   var isLoading = false.obs;
   var products = <ProductModel>[].obs;
-  var selectedImage = Rxn<File>();
+  var selectedImages = <File>[].obs;
 
   @override
   void onInit() {
@@ -19,6 +19,31 @@ class AdminProductController extends GetxController {
     fetchProducts();
   }
 
+  Future<List<String>?> uploadMultipleImages(List<File> imageFiles) async {
+    try {
+      dio.FormData formData = dio.FormData();
+      
+      // Add multiple files to the FormData under the same key 'images'
+      for (var file in imageFiles) {
+        formData.files.add(MapEntry(
+          'images', // Must match upload.array('images') in Node.js
+          await dio.MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+        ));
+      }
+
+      final response = await _apiClient.dio.post('/upload/multiple', data: formData);
+      
+      if (response.statusCode == 200 && response.data['success']) {
+        // Return the list of Cloudinary URLs
+        return List<String>.from(response.data['imageUrls']);
+      }
+      return null;
+    } on dio.DioException catch (e) {
+      print("Multi Upload Error: ${e.response?.data}");
+      return null;
+    }
+  }
+  
   Future<void> fetchProducts() async {
     try {
       isLoading.value = true;

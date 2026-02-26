@@ -36,7 +36,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add an image URL'],
         default: 'https://via.placeholder.com/150'
-    }
+    },
+    images: [{
+        type: String
+    }],
 }, {
     timestamps: true
 });
