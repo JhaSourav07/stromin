@@ -1,19 +1,23 @@
-// lib/features/auth/screens/login_screen.dart
+// lib/features/auth/screens/sign_up_screen.dart
+import 'package:ecommerce_app/features/auth/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import '../controllers/auth_controller.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({Key? key}) : super(key: key);
+class SignUpScreen extends StatelessWidget {
+  SignUpScreen({Key? key}) : super(key: key);
 
   final AuthController authController = Get.find<AuthController>();
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Shared obscureText state for the password field
   final RxBool _obscurePassword = true.obs;
 
+  // --- REUSABLE PREMIUM INPUT FIELD ---
+  // We centralise the styling here so every field is pixel-perfect consistent.
   Widget _buildField({
     required String label,
     required IconData icon,
@@ -32,23 +36,26 @@ class LoginScreen extends StatelessWidget {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Color(0xFF71717A)),
-        prefixIcon: Icon(icon, color: const Color(0xFF52525B), size: 20),
+        labelStyle: const TextStyle(color: Color(0xFF71717A)), // zinc-500
+        prefixIcon: Icon(icon, color: const Color(0xFF52525B), size: 20), // zinc-600
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFF18181B),
+        fillColor: const Color(0xFF18181B), // zinc-900
+        // Default border — subtle and understated
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF27272A), width: 1),
+          borderSide: const BorderSide(color: Color(0xFF27272A), width: 1), // zinc-800
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFF27272A), width: 1),
         ),
+        // Focused border — white, crisp
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
+        // Error border — red accent without breaking the dark feel
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
@@ -58,8 +65,7 @@ class LoginScreen extends StatelessWidget {
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
         errorStyle: const TextStyle(color: Color(0xFFEF4444), fontSize: 12),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       ),
     );
   }
@@ -68,6 +74,8 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF09090B),
+      // We use a SafeArea + scroll so the form stays accessible on smaller
+      // devices when the keyboard pushes everything up.
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -78,21 +86,39 @@ class LoginScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // ── HEADER ───────────────────────────────────────────────
-                // Login is the entry point — no back button here.
-                // Extra top padding gives the heading room to breathe.
-                const SizedBox(height: 72),
+                // ── TOP NAV ──────────────────────────────────────────────
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF18181B),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF27272A)),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ).animate().fade(duration: 300.ms),
 
+                // ── HEADER ───────────────────────────────────────────────
+                const SizedBox(height: 48),
+
+                // Subtle label above the main heading — same pattern as
+                // many premium SaaS apps: small context → big headline.
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF18181B),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFF27272A)),
                   ),
                   child: const Text(
-                    'WELCOME BACK',
+                    'NEW ACCOUNT',
                     style: TextStyle(
                       color: Color(0xFF71717A),
                       fontSize: 11,
@@ -105,7 +131,7 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Sign in to\nyour account.',
+                  'Create your\naccount.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 38,
@@ -118,7 +144,7 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 const Text(
-                  'Good to have you back.',
+                  'Join us and start shopping today.',
                   style: TextStyle(
                     color: Color(0xFF71717A),
                     fontSize: 15,
@@ -127,7 +153,21 @@ class LoginScreen extends StatelessWidget {
                 ).animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0),
 
                 // ── FORM FIELDS ──────────────────────────────────────────
-                const SizedBox(height: 52),
+                const SizedBox(height: 48),
+
+                _buildField(
+                  label: 'Full Name',
+                  icon: Icons.person_outline_rounded,
+                  controller: nameController,
+                  keyboardType: TextInputType.name,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Please enter your name';
+                    if (v.trim().length < 2) return 'Name is too short';
+                    return null;
+                  },
+                ).animate().fade(delay: 250.ms).slideY(begin: 0.15, end: 0),
+
+                const SizedBox(height: 16),
 
                 _buildField(
                   label: 'Email Address',
@@ -135,18 +175,19 @@ class LoginScreen extends StatelessWidget {
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Please enter your email';
-                    }
+                    if (v == null || v.trim().isEmpty) return 'Please enter your email';
+                    // Basic email format check
                     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
                       return 'Enter a valid email address';
                     }
                     return null;
                   },
-                ).animate().fade(delay: 250.ms).slideY(begin: 0.15, end: 0),
+                ).animate().fade(delay: 300.ms).slideY(begin: 0.15, end: 0),
 
                 const SizedBox(height: 16),
 
+                // Password field with a show/hide toggle.
+                // We use Obx here because _obscurePassword is a reactive RxBool.
                 Obx(
                   () => _buildField(
                     label: 'Password',
@@ -164,15 +205,27 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return 'Please enter your password';
-                      }
+                      if (v == null || v.isEmpty) return 'Please enter a password';
+                      if (v.length < 6) return 'Password must be at least 6 characters';
                       return null;
                     },
                   ),
-                ).animate().fade(delay: 300.ms).slideY(begin: 0.15, end: 0),
+                ).animate().fade(delay: 350.ms).slideY(begin: 0.15, end: 0),
 
-                // ── PRIMARY BUTTON ───────────────────────────────────────
+                // ── TERMS NOTICE ─────────────────────────────────────────
+                const SizedBox(height: 24),
+
+                const Text(
+                  'By creating an account, you agree to our Terms of Service and Privacy Policy.',
+                  style: TextStyle(
+                    color: Color(0xFF52525B), // zinc-600
+                    fontSize: 12,
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ).animate().fade(delay: 380.ms),
+
+                // ── SUBMIT BUTTON ────────────────────────────────────────
                 const SizedBox(height: 32),
 
                 Obx(
@@ -207,14 +260,15 @@ class LoginScreen extends StatelessWidget {
                             ),
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
-                                authController.login(
+                                authController.signup(
+                                  nameController.text.trim(),
                                   emailController.text.trim(),
                                   passwordController.text.trim(),
                                 );
                               }
                             },
                             child: const Text(
-                              'Sign In',
+                              'Create Account',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -223,75 +277,33 @@ class LoginScreen extends StatelessWidget {
                             ),
                           ),
                   ),
-                ).animate().fade(delay: 350.ms).slideY(begin: 0.3, end: 0),
+                ).animate().fade(delay: 400.ms).slideY(begin: 0.3, end: 0),
 
-                // ── DIVIDER ──────────────────────────────────────────────
-                const SizedBox(height: 32),
+                // ── LOGIN REDIRECT ───────────────────────────────────────
+                const SizedBox(height: 28),
 
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Expanded(
-                        child: Divider(color: Color(0xFF27272A), thickness: 1)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
+                    const Text(
+                      'Already have an account? ',
+                      style: TextStyle(color: Color(0xFF71717A), fontSize: 14),
+                    ),
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      child: const Text(
+                        'Sign In',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.2),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.5,
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.white,
                         ),
                       ),
                     ),
-                    const Expanded(
-                        child: Divider(color: Color(0xFF27272A), thickness: 1)),
                   ],
-                ).animate().fade(delay: 400.ms),
-
-                // ── SECONDARY BUTTON (Sign Up) ────────────────────────────
-                // This is intentionally a ghost/outline button — visually
-                // lighter than the primary CTA so the hierarchy is clear:
-                // "Sign In" is what most users want; "Create Account" is secondary.
-                const SizedBox(height: 32),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFF27272A), width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: () => Get.toNamed('/signup'),
-                    child: const Text(
-                      'Create an Account',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-                ).animate().fade(delay: 450.ms).slideY(begin: 0.2, end: 0),
-
-                // ── FOOTER NOTE ──────────────────────────────────────────
-                const SizedBox(height: 32),
-
-                Center(
-                  child: Text(
-                    'By signing in, you agree to our Terms\nand Privacy Policy.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.2),
-                      fontSize: 12,
-                      height: 1.6,
-                    ),
-                  ),
-                ).animate().fade(delay: 500.ms),
+                ).animate().fade(delay: 450.ms),
 
                 const SizedBox(height: 40),
               ],

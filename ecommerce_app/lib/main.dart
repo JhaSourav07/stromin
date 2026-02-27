@@ -2,6 +2,7 @@
 import 'package:ecommerce_app/features/admin/screens/add_product_screen.dart';
 import 'package:ecommerce_app/features/admin/screens/admin_dashboard_screen.dart';
 import 'package:ecommerce_app/features/admin/screens/admin_orders_screen.dart';
+import 'package:ecommerce_app/features/auth/screens/sign_up_screen.dart';
 import 'package:ecommerce_app/features/cart/screens/cart_screen.dart';
 import 'package:ecommerce_app/features/cart/screens/checkout_screen.dart';
 import 'package:ecommerce_app/features/orders/screens/orders_screen.dart';
@@ -88,6 +89,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/cart', page: () => CartScreen()),
         GetPage(name: '/my-orders', page: () => OrdersScreen()),
         GetPage(name: '/admin-orders', page: () => AdminOrdersScreen()),
+        GetPage(name: '/signup', page: () => SignUpScreen()),
         GetPage(
           name: '/checkout',
           page: () => CheckoutScreen(),

@@ -24,7 +24,7 @@ exports.signup = async (req, res) => {
       name,
       email,
       password,
-      role,
+      role : 'customer',
     });
 
     res.status(201).json({
@@ -76,7 +76,7 @@ exports.login = async (req, res) => {
     res.status(200).json({
       success: true,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
