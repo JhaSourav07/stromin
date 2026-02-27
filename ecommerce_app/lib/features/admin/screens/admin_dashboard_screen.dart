@@ -8,9 +8,8 @@ class AdminDashboardScreen extends StatelessWidget {
   AdminDashboardScreen({Key? key}) : super(key: key);
 
   final AuthController authController = Get.find<AuthController>();
-  final AdminProductController productController = Get.put(
-    AdminProductController(),
-  );
+  final AdminProductController productController =
+      Get.put(AdminProductController());
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +18,7 @@ class AdminDashboardScreen extends StatelessWidget {
         title: const Text('Admin Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_shipping), // NEW BUTTON
+            icon: const Icon(Icons.local_shipping),
             onPressed: () => Get.toNamed('/admin-orders'),
           ),
           IconButton(
@@ -42,9 +41,12 @@ class AdminDashboardScreen extends StatelessWidget {
           itemCount: productController.products.length,
           itemBuilder: (context, index) {
             final product = productController.products[index];
+
             return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: ListTile(
+                // ── THUMBNAIL ─────────────────────────────────────────────
                 leading: SizedBox(
                   width: 50,
                   height: 50,
@@ -54,25 +56,41 @@ class AdminDashboardScreen extends StatelessWidget {
                       product.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        // If the image fails to load, show a fallback icon instead of crashing!
                         return Container(
                           color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey,
-                          ),
+                          child: const Icon(Icons.image_not_supported,
+                              color: Colors.grey),
                         );
                       },
                     ),
                   ),
                 ),
+
                 title: Text(product.name),
                 subtitle: Text(
-                  '\$${product.price.toStringAsFixed(2)} - Stock: ${product.stock}',
+                  '\$${product.price.toStringAsFixed(2)} · Stock: ${product.stock}',
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => productController.deleteProduct(product.id),
+
+                // ── ACTIONS: edit + delete ─────────────────────────────────
+                // We put both in a Row since ListTile.trailing only accepts
+                // one widget. Both are icon-only to keep the row compact.
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Edit button — navigates to EditProductScreen with the
+                    // full ProductModel as an argument.
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined,
+                          color: Colors.blueGrey),
+                      onPressed: () =>
+                          Get.toNamed('/edit-product', arguments: product),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () =>
+                          _confirmDelete(context, product.id, product.name),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -82,6 +100,36 @@ class AdminDashboardScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () => Get.toNamed('/add-product'),
+      ),
+    );
+  }
+
+  // Confirmation dialog before delete — prevents accidental taps.
+  void _confirmDelete(BuildContext context, String id, String name) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF18181B),
+        title: const Text('Delete Product',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to delete "$name"? This cannot be undone.',
+          style: const TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              productController.deleteProduct(id);
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
       ),
     );
   }

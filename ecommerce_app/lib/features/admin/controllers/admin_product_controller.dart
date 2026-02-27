@@ -1,5 +1,5 @@
+// lib/features/admin/controllers/admin_product_controller.dart
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:ecommerce_app/core/network/api_client.dart';
@@ -19,22 +19,22 @@ class AdminProductController extends GetxController {
     fetchProducts();
   }
 
+  // ── IMAGE UPLOAD ──────────────────────────────────────────────────────────
+
   Future<List<String>?> uploadMultipleImages(List<File> imageFiles) async {
     try {
       dio.FormData formData = dio.FormData();
-      
-      // Add multiple files to the FormData under the same key 'images'
       for (var file in imageFiles) {
         formData.files.add(MapEntry(
-          'images', // Must match upload.array('images') in Node.js
-          await dio.MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+          'images',
+          await dio.MultipartFile.fromFile(file.path,
+              filename: file.path.split('/').last),
         ));
       }
 
-      final response = await _apiClient.dio.post('/upload/multiple', data: formData);
-      
+      final response =
+          await _apiClient.dio.post('/upload/multiple', data: formData);
       if (response.statusCode == 200 && response.data['success']) {
-        // Return the list of Cloudinary URLs
         return List<String>.from(response.data['imageUrls']);
       }
       return null;
@@ -43,7 +43,9 @@ class AdminProductController extends GetxController {
       return null;
     }
   }
-  
+
+  // ── FETCH ─────────────────────────────────────────────────────────────────
+
   Future<void> fetchProducts() async {
     try {
       isLoading.value = true;
@@ -51,9 +53,8 @@ class AdminProductController extends GetxController {
 
       if (response.statusCode == 200 && response.data['success']) {
         final List<dynamic> productData = response.data['data'];
-        products.value = productData
-            .map((json) => ProductModel.fromJson(json))
-            .toList();
+        products.value =
+            productData.map((json) => ProductModel.fromJson(json)).toList();
       }
     } on DioException catch (e) {
       Get.snackbar('Error', 'Failed to fetch products');
@@ -63,43 +64,70 @@ class AdminProductController extends GetxController {
     }
   }
 
+  // ── CREATE ────────────────────────────────────────────────────────────────
+
   Future<bool> addProduct(Map<String, dynamic> productData) async {
     try {
-      final response = await _apiClient.dio.post(
-        '/products',
-        data: productData,
-      );
+      final response = await _apiClient.dio.post('/products', data: productData);
 
       if (response.statusCode == 201 && response.data['success']) {
         products.add(ProductModel.fromJson(response.data['data']));
-        // Get.snackbar('Success', 'Product added successfully');
         return true;
       }
       return false;
     } on DioException catch (e) {
-      Get.snackbar(
-        'Error',
-        e.response?.data['message'] ?? 'Failed to add product',
-      );
+      Get.snackbar('Error', e.response?.data['message'] ?? 'Failed to add product');
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ── UPDATE ────────────────────────────────────────────────────────────────
+  // We accept a plain Map so the screen decides which fields changed.
+  // This keeps the controller flexible — it doesn't assume which fields
+  // the edit screen exposes.
+
+  Future<bool> updateProduct(
+      String id, Map<String, dynamic> updatedData) async {
+    try {
+      isLoading.value = true;
+      final response =
+          await _apiClient.dio.put('/products/$id', data: updatedData);
+
+      if (response.statusCode == 200 && response.data['success']) {
+        // Update the local list in-place so the dashboard reflects changes
+        // immediately without a full refetch.
+        final updatedProduct = ProductModel.fromJson(response.data['data']);
+        final index = products.indexWhere((p) => p.id == id);
+        if (index != -1) {
+          products[index] = updatedProduct;
+          products.refresh();
+        }
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      Get.snackbar(
+          'Error', e.response?.data['message'] ?? 'Failed to update product');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ── DELETE ────────────────────────────────────────────────────────────────
+
   Future<void> deleteProduct(String id) async {
     try {
       final response = await _apiClient.dio.delete('/products/$id');
       if (response.statusCode == 200) {
-        // Remove from local list to update UI
         products.removeWhere((product) => product.id == id);
         Get.snackbar('Success', 'Product deleted');
       }
     } on DioException catch (e) {
       Get.snackbar(
-        'Error',
-        e.response?.data['message'] ?? 'Failed to delete product',
-      );
+          'Error', e.response?.data['message'] ?? 'Failed to delete product');
     }
   }
 
@@ -112,38 +140,17 @@ class AdminProductController extends GetxController {
         ),
       });
 
-      print("--- UPLOADING IMAGE ---");
       final response = await _apiClient.dio.post('/upload', data: formData);
 
-      print("--- RAW BACKEND RESPONSE ---");
-      print("Status Code: ${response.statusCode}");
-      print("Data Type: ${response.data.runtimeType}");
-      print("Data Payload: ${response.data}");
-      print("----------------------------");
-
-      if (response.statusCode == 200) {
-        // If it parsed correctly as a Map
-        if (response.data is Map) {
-          if (response.data['success'] == true) {
-            return response.data['file'];
-          } else {
-            print("Backend returned 200 but success flag is false!");
-          }
-        } else {
-          print(
-            "CRITICAL: Dio did not parse the response as JSON. It's a string.",
-          );
+      if (response.statusCode == 200 && response.data is Map) {
+        if (response.data['success'] == true) {
+          return response.data['file'];
         }
       }
       return null;
     } on dio.DioException catch (e) {
-      print(
-        "DioException Error: ${e.response?.statusCode} - ${e.response?.data}",
-      );
+      print("Upload Error: ${e.response?.statusCode} - ${e.response?.data}");
       Get.snackbar('Upload Failed', 'Could not upload image');
-      return null;
-    } catch (e) {
-      print("Standard Exception caught: $e");
       return null;
     }
   }

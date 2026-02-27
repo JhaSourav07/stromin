@@ -11,11 +11,11 @@ class ShopScreen extends StatelessWidget {
 
   final AuthController authController = Get.find<AuthController>();
   final ShopController shopController = Get.put(ShopController());
-  final CartController cartController = Get.put(CartController(), permanent: true);
+  final CartController cartController =
+      Get.put(CartController(), permanent: true);
 
   @override
   Widget build(BuildContext context) {
-    // Grab the current theme data
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
@@ -24,50 +24,211 @@ class ShopScreen extends StatelessWidget {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
+          // ── APP BAR ───────────────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 120.0,
             floating: true,
             pinned: true,
-            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.9),
+            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.95),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
-                'Discover', 
-                // Color inherits automatically now
-                style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                'Discover',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary),
               ),
             ),
             actions: [
               IconButton(
-                icon: Icon(Icons.receipt_long_outlined, color: theme.colorScheme.primary.withOpacity(0.8), size: 26),
+                icon: Icon(Icons.receipt_long_outlined,
+                    color: theme.colorScheme.primary.withOpacity(0.8),
+                    size: 26),
                 onPressed: () => Get.toNamed('/my-orders'),
               ),
               _buildCartIcon(theme),
               IconButton(
-                icon: Icon(Icons.logout, color: theme.colorScheme.primary.withOpacity(0.7)),
+                icon: Icon(Icons.logout,
+                    color: theme.colorScheme.primary.withOpacity(0.7)),
                 onPressed: () => authController.logout(),
               ),
               const SizedBox(width: 10),
             ],
           ),
 
+          // ── SEARCH BAR ────────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Obx(() => TextField(
+                    controller: shopController.searchController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      hintStyle: const TextStyle(color: Color(0xFF71717A)),
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          color: Color(0xFF52525B), size: 22),
+                      suffixIcon: shopController.searchQuery.value.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close,
+                                  color: Color(0xFF52525B), size: 20),
+                              onPressed: shopController.clearSearch,
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: const Color(0xFF18181B),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF27272A), width: 1),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF27272A), width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Colors.white, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                    ),
+                  )),
+            ).animate().fade(duration: 400.ms),
+          ),
+
+          // ── CATEGORY CHIPS ─────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 56,
+              child: Obx(() {
+                // FIXED: Read the observable synchronously here so GetX tracks it!
+                final currentCategory = shopController.selectedCategory.value;
+
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  itemCount: shopController.categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final category = shopController.categories[index];
+                    
+                    // Use the synchronously read value
+                    final isSelected = currentCategory == category;
+
+                    return GestureDetector(
+                      onTap: () => shopController.selectCategory(category),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF18181B),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF27272A),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            color: isSelected ? Colors.black : Colors.white,
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+
+          // ── PRODUCT GRID ───────────────────────────────────────────────────
           Obx(() {
             if (shopController.isLoading.value) {
               return SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
+                child: Center(
+                    child: CircularProgressIndicator(
+                        color: theme.colorScheme.primary)),
               );
             }
+
+            final filtered = shopController.filteredProducts;
 
             if (shopController.products.isEmpty) {
               return SliverFillRemaining(
                 child: Center(
-                  child: Text('No products available.', style: theme.textTheme.bodyLarge).animate().fade().scale(),
+                  child: Text('No products available.',
+                          style: theme.textTheme.bodyLarge)
+                      .animate()
+                      .fade()
+                      .scale(),
+                ),
+              );
+            }
+
+            if (filtered.isEmpty) {
+              return SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off_rounded,
+                          size: 60, color: Color(0xFF27272A)),
+                      const SizedBox(height: 16),
+                      const Text('No results found',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try a different search or category',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.4), fontSize: 14),
+                      ),
+                      const SizedBox(height: 24),
+                      GestureDetector(
+                        onTap: () {
+                          shopController.clearSearch();
+                          shopController.selectCategory('All');
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF18181B),
+                            borderRadius: BorderRadius.circular(12),
+                            border:
+                                Border.all(color: const Color(0xFF27272A)),
+                          ),
+                          child: const Text('Clear filters',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      )
+                    ],
+                  ).animate().fade().scale(),
                 ),
               );
             }
 
             return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -77,15 +238,17 @@ class ShopScreen extends StatelessWidget {
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final product = shopController.products[index];
-                    
+                    final product = filtered[index];
+
                     return GestureDetector(
-                      onTap: () => Get.toNamed('/product-details', arguments: product),
+                      onTap: () =>
+                          Get.toNamed('/product-details', arguments: product),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: theme.cardTheme.color, // Uses the charcoal color
+                          color: theme.cardTheme.color,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF27272A), width: 1), // Subtle premium border
+                          border: Border.all(
+                              color: const Color(0xFF27272A), width: 1),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,12 +258,15 @@ class ShopScreen extends StatelessWidget {
                               child: Hero(
                                 tag: 'product_image_${product.id}',
                                 child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(20)),
                                   child: Image.network(
                                     product.imageUrl,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                                    errorBuilder: (_, __, ___) => const Center(
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.grey)),
                                   ),
                                 ),
                               ),
@@ -111,31 +277,43 @@ class ShopScreen extends StatelessWidget {
                                 padding: const EdgeInsets.all(12.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           product.name,
-                                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: theme.colorScheme.primary),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color:
+                                                  theme.colorScheme.primary),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           product.category,
-                                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(fontSize: 11),
                                         ),
                                       ],
                                     ),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             '\$${product.price.toStringAsFixed(0)}',
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.primary),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color:
+                                                    theme.colorScheme.primary),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -143,17 +321,25 @@ class ShopScreen extends StatelessWidget {
                                         const SizedBox(width: 8),
                                         GestureDetector(
                                           behavior: HitTestBehavior.opaque,
-                                          onTap: () => cartController.addToCart(product),
+                                          onTap: () => cartController
+                                              .addToCart(product),
                                           child: Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              // Invert button colors for dark mode
-                                              color: isDark ? Colors.white : Colors.black,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black,
                                               shape: BoxShape.circle,
                                             ),
-                                            child: Icon(Icons.add, color: isDark ? Colors.black : Colors.white, size: 18),
+                                            child: Icon(Icons.add,
+                                                color: isDark
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                                size: 18),
                                           ),
-                                        ).animate().scale(duration: 200.ms, curve: Curves.easeInOut),
+                                        ).animate().scale(
+                                            duration: 200.ms,
+                                            curve: Curves.easeInOut),
                                       ],
                                     )
                                   ],
@@ -163,9 +349,16 @@ class ShopScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ).animate().fade(duration: 500.ms, delay: (index * 100).ms).slideY(begin: 0.2, end: 0, duration: 500.ms, curve: Curves.easeOutQuad);
+                    )
+                        .animate()
+                        .fade(duration: 500.ms, delay: (index * 80).ms)
+                        .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            duration: 500.ms,
+                            curve: Curves.easeOutQuad);
                   },
-                  childCount: shopController.products.length,
+                  childCount: filtered.length,
                 ),
               ),
             );
@@ -183,7 +376,8 @@ class ShopScreen extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Icon(Icons.shopping_bag_outlined, color: theme.colorScheme.primary, size: 28),
+            Icon(Icons.shopping_bag_outlined,
+                color: theme.colorScheme.primary, size: 28),
             Obx(() {
               if (cartController.itemCount == 0) return const SizedBox.shrink();
               return Positioned(
@@ -193,14 +387,22 @@ class ShopScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.redAccent,
-                    border: Border.all(color: theme.scaffoldBackgroundColor, width: 1.5),
+                    border: Border.all(
+                        color: theme.scaffoldBackgroundColor, width: 1.5),
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     cartController.itemCount.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold),
                   ),
-                ).animate(key: ValueKey(cartController.itemCount)).scale(duration: 200.ms).then().shake(),
+                )
+                    .animate(key: ValueKey(cartController.itemCount))
+                    .scale(duration: 200.ms)
+                    .then()
+                    .shake(),
               );
             }),
           ],

@@ -1,3 +1,4 @@
+// lib/features/cart/models/cart_item_model.dart
 import 'package:ecommerce_app/features/admin/models/product_model.dart';
 
 class CartItemModel {
@@ -9,6 +10,19 @@ class CartItemModel {
     this.quantity = 1,
   });
 
-  // helper to get total price of the cart item
   double get totalPrice => product.price * quantity;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product': product.toJson(),
+      'quantity': quantity,
+    };
+  }
+
+  factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    return CartItemModel(
+      product: ProductModel.fromJson(json['product'] as Map<String, dynamic>),
+      quantity: json['quantity'] as int,
+    );
+  }
 }
